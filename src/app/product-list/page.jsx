@@ -80,7 +80,7 @@ const ProductList = () => {
           const pricePerPortion = Number(product.pricePerPortion); // Asegúrate de que sea un número
           const portionsAvailable = Math.floor(
             product.grams / product.portions
-          );
+          ); // Calcula las porciones disponibles
           const totalPrice = portionsAvailable * pricePerPortion; // Calcula el precio total
 
           // Formatea la fecha de creación
@@ -105,6 +105,8 @@ const ProductList = () => {
                 Porción: {product.portions}{" "}
                 <span className="text-gray-600">Gramos por porción</span>
               </p>
+              <p>Porciones disponibles: {portionsAvailable}</p>{" "}
+              {/* Muestra las porciones disponibles */}
               <p>Precio por porción: ${Math.round(pricePerPortion)}</p>
               <p>Precio Total: ${Math.round(totalPrice)}</p>
               <p>Fecha de Creación: {createdAt}</p>{" "}
