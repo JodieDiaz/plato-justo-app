@@ -74,40 +74,65 @@ const ProductList = () => {
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4 text-center">
         Lista de Productos
-      </h1>{" "}
-      {/* Centrar el título */}
+      </h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {products.map((product) => (
-          <div key={product._id} className="border rounded-lg p-4 shadow-lg">
-            <h2 className="text-xl font-semibold">{product.name}</h2>
-            <p>Descripción: {product.description}</p>
-            <p>Precio: ${product.price}</p>
-            <p>Porciones: {product.portions}</p>
-            <p>Gramos: {product.grams}</p>
-            <p>Precio por porción: ${product.pricePerPortion}</p>
-            {product.image && (
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-48 object-cover rounded-md mb-2"
-              />
-            )}
-            <div className="flex justify-between">
-              <button
-                onClick={() => handleEdit(product._id)}
-                className="bg-blue-500 text-white rounded px-2 py-1"
-              >
-                Editar
-              </button>
-              <button
-                onClick={() => handleDelete(product._id)}
-                className="bg-red-500 text-white rounded px-2 py-1"
-              >
-                Eliminar
-              </button>
+        {products.map((product) => {
+          const pricePerPortion = Number(product.pricePerPortion); // Asegúrate de que sea un número
+          const portionsAvailable = Math.floor(
+            product.grams / product.portions
+          );
+          const totalPrice = portionsAvailable * pricePerPortion; // Calcula el precio total
+
+          // Formatea la fecha de creación
+          const createdAt = new Date(product.createdAt).toLocaleDateString(
+            "es-CO",
+            {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }
+          );
+
+          return (
+            <div key={product._id} className="border rounded-lg p-4 shadow-lg">
+              <h2 className="text-xl font-semibold">{product.name}</h2>
+              <p>Descripción: {product.description}</p>
+              <p>
+                Gramos: {product.grams}{" "}
+                <span className="text-gray-600">gramos en total</span>
+              </p>
+              <p>
+                Porción: {product.portions}{" "}
+                <span className="text-gray-600">Gramos por porción</span>
+              </p>
+              <p>Precio por porción: ${Math.round(pricePerPortion)}</p>
+              <p>Precio Total: ${Math.round(totalPrice)}</p>
+              <p>Fecha de Creación: {createdAt}</p>{" "}
+              {/* Muestra la fecha de creación */}
+              {product.image && (
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-48 object-cover rounded-md mb-2"
+                />
+              )}
+              <div className="flex justify-between">
+                <button
+                  onClick={() => handleEdit(product._id)}
+                  className="bg-blue-500 text-white rounded px-2 py-1"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => handleDelete(product._id)}
+                  className="bg-red-500 text-white rounded px-2 py-1"
+                >
+                  Eliminar
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

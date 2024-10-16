@@ -11,10 +11,10 @@ function ProductForm() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    price: "",
     portions: "",
     grams: "",
     pricePerPortion: "",
+    price: "",
     image: null,
   });
   const [imagePreview, setImagePreview] = useState(null);
