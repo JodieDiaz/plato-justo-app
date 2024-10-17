@@ -11,13 +11,14 @@ function ProductForm() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    price: "",
     portions: "",
     grams: "",
     pricePerPortion: "",
+    price: "",
     image: null,
   });
   const [imagePreview, setImagePreview] = useState(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -62,29 +63,37 @@ function ProductForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const data = new FormData();
-    Object.keys(formData).forEach((key) => {
-      const value = formData[key];
-
-      if (value !== null) {
-        data.append(key, value);
-      }
-    });
-
     try {
-      if (!params.id) {
-        await axios.post("/api/products", data, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
-      } else {
-        await axios.put(`/api/products/${params.id}`, data, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
+      let imageUrl = uploadedImageUrl;
+
+      // Subir la imagen a Cloudinary si es nueva
+      if (formData.image && typeof formData.image !== "string") {
+        const formDataCloudinary = new FormData();
+        formDataCloudinary.append("file", formData.image);
+        formDataCloudinary.append(
+          "upload_preset",
+          "unsigned_preset_plato_justo"
+        );
+
+        const response = await axios.post(
+          `https://api.cloudinary.com/v1_1/dl1ixv30n/image/upload`, // Reemplaza por tu Cloudinary cloud_name
+          formDataCloudinary
+        );
+        imageUrl = response.data.secure_url;
       }
+
+      // Preparar los datos a enviar
+      const data = {
+        ...formData,
+        image: imageUrl, // Usar la URL de la imagen subida
+      };
+
+      if (!params.id) {
+        await axios.post("/api/products", data);
+      } else {
+        await axios.put(`/api/products/${params.id}`, data);
+      }
+
       router.push("/admin");
     } catch (error) {
       console.error("Error al enviar el formulario:", error);
@@ -195,7 +204,6 @@ function ProductForm() {
           className="border border-gray-300 rounded w-full py-2 px-3 mb-4 bg-gray-50 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        {/* Vista previa de la imagen */}
         {imagePreview && (
           <div className="mt-4">
             <h3 className="text-black font-bold">Vista previa de la imagen:</h3>
@@ -207,7 +215,6 @@ function ProductForm() {
           </div>
         )}
 
-        {/* Mostrar la cantidad de porciones disponibles y el valor total */}
         <div className="mt-4 text-black">
           <p>Cantidad de Porciones Disponibles: {calculatePortions()}</p>
           <p>Valor Total: ${calculateTotalValue().toFixed(2)}</p>
