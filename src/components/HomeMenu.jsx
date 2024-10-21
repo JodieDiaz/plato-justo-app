@@ -5,9 +5,7 @@ export default function HomeMenu() {
   return (
     <section className="">
       <div className="text-center mb-4">
-        <h3 className="text-primary uppercase text-4xl font-bold">
-          Nuestro menu
-        </h3>
+        
         {/* <h2 className="text-primary font-bold text-4xl">Menu</h2> */}
       </div>
 
