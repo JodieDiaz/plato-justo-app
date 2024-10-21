@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import ProductListCard from "../../components/ProductListCard";
+import ProductListCard from "../../components/ListCard";
 
 const ProductListPage = () => {
   const [products, setProducts] = useState([]);
