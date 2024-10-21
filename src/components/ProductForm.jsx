@@ -11,10 +11,11 @@ function ProductForm() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    portions: "",
-    grams: "",
-    pricePerPortion: "",
-    price: "",
+    fullGrams: "", // Gramos totales
+    fullPortionGrams: "", // Gramos por porción completa
+    halfPortionGrams: "", // Gramos por media porción (nuevo campo)
+    fullPortionPrice: "", // Precio por porción completa
+    halfPortionPrice: "", // Precio por media porción (editable)
     image: null,
   });
   const [imagePreview, setImagePreview] = useState(null);
@@ -60,62 +61,93 @@ function ProductForm() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      let imageUrl = uploadedImageUrl;
+  try {
+    let imageUrl = uploadedImageUrl;
 
-      // Subir la imagen a Cloudinary si es nueva
-      if (formData.image && typeof formData.image !== "string") {
-        const formDataCloudinary = new FormData();
-        formDataCloudinary.append("file", formData.image);
-        formDataCloudinary.append(
-          "upload_preset",
-          "unsigned_preset_plato_justo"
-        );
+    // Subir la imagen a Cloudinary si es nueva
+    if (formData.image && typeof formData.image !== "string") {
+      const formDataCloudinary = new FormData();
+      formDataCloudinary.append("file", formData.image);
+      formDataCloudinary.append("upload_preset", "unsigned_preset_plato_justo");
 
-        const response = await axios.post(
-          `https://api.cloudinary.com/v1_1/dl1ixv30n/image/upload`, // Reemplaza por tu Cloudinary cloud_name
-          formDataCloudinary
-        );
-        imageUrl = response.data.secure_url;
-      }
-
-      // Preparar los datos a enviar
-      const data = {
-        ...formData,
-        image: imageUrl, // Usar la URL de la imagen subida
-      };
-
-      if (!params.id) {
-        await axios.post("/api/products", data);
-      } else {
-        await axios.put(`/api/products/${params.id}`, data);
-      }
-
-      router.push("/admin");
-    } catch (error) {
-      console.error("Error al enviar el formulario:", error);
+      const response = await axios.post(
+        "https://api.cloudinary.com/v1_1/dl1ixv30n/image/upload", // Reemplaza por tu Cloudinary cloud_name
+        formDataCloudinary
+      );
+      imageUrl = response.data.secure_url;
     }
+
+    // Calcular los precios si no están establecidos
+    const fullPortionPrice = parseFloat(formData.fullPortionPrice);
+    const halfPortionPrice =
+      parseFloat(formData.halfPortionPrice) || fullPortionPrice / 2; // Si no se ingresa, se calcula como la mitad
+    const totalPortions = calculatePortions(); // Total de porciones completas
+    const fullPrice = fullPortionPrice * totalPortions; // Precio total por porciones completas
+
+    // Aquí asegúrate de calcular halfPortionGrams
+    const halfPortionGrams = calculateHalfPortionGrams(); // Asegúrate de implementar esta función para obtener el valor correcto.
+
+    // Preparar los datos a enviar
+    const data = {
+      ...formData,
+      image: imageUrl, // Usar la URL de la imagen subida
+      halfPortionPrice: halfPortionPrice,
+      fullPrice: fullPrice,
+      totalPortions: totalPortions, // Agregar total de porciones completas
+      remainingGrams: calculateRemainingGrams(), // Gramos restantes
+      halfPortionGrams: halfPortionGrams, // Asegúrate de incluir halfPortionGrams aquí
+    };
+
+    // Enviar los datos a la API
+    if (!params.id) {
+      await axios.post("/api/products", data);
+    } else {
+      await axios.put(`/api/products/${params.id}`, data);
+    }
+
+    // Cambiar la ruta de redirección
+    router.push("/product-list");
+  } catch (error) {
+    console.error("Error al enviar el formulario:", error);
+  }
+};
+
+  // Calcula los gramos por media porción
+  const calculateHalfPortionGrams = () => {
+    const fullPortionGrams = parseFloat(formData.fullPortionGrams);
+    return fullPortionGrams ? fullPortionGrams / 2 : 0;
   };
 
+  // Calcula el número de porciones completas disponibles
   const calculatePortions = () => {
-    const gramsAvailable = parseFloat(formData.grams);
-    const gramsPerPortion = parseFloat(formData.portions);
-    if (gramsAvailable && gramsPerPortion) {
-      return Math.floor(gramsAvailable / gramsPerPortion);
-    }
-    return 0;
+    const fullGrams = parseFloat(formData.fullGrams);
+    const fullPortionGrams = parseFloat(formData.fullPortionGrams);
+    return fullPortionGrams ? Math.floor(fullGrams / fullPortionGrams) : 0;
   };
 
-  const calculateTotalValue = () => {
-    const portionsAvailable = calculatePortions();
-    const pricePerPortion = parseFloat(formData.pricePerPortion);
-    if (portionsAvailable && pricePerPortion) {
-      return portionsAvailable * pricePerPortion;
-    }
-    return 0;
+  // Calcula los gramos restantes
+  const calculateRemainingGrams = () => {
+    const fullGrams = parseFloat(formData.fullGrams);
+    const fullPortionGrams = parseFloat(formData.fullPortionGrams);
+    const totalPortions = calculatePortions();
+    return fullGrams - totalPortions * fullPortionGrams || 0;
+  };
+
+  // Calcula el precio total del producto
+  const calculateTotalPrice = () => {
+    const fullPortionPrice = parseFloat(formData.fullPortionPrice);
+    const totalPortions = calculatePortions(); // Número de porciones
+    return fullPortionPrice * totalPortions || 0;
+  };
+
+  // Formatea los números con punto como separador de miles y sin decimales
+  const formatNumber = (num) => {
+    return Math.floor(num)
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
 
   return (
@@ -129,6 +161,7 @@ function ProductForm() {
           {params.id ? "Actualizar Producto" : "Crear Producto"}
         </h2>
 
+        {/* Campos del formulario */}
         <label className="block text-black font-bold mb-2" htmlFor="name">
           Nombre del Producto
         </label>
@@ -155,25 +188,13 @@ function ProductForm() {
           required
         />
 
-        <label className="block text-black font-bold mb-2" htmlFor="grams">
-          Gramos Disponibles
+        <label className="block text-black font-bold mb-2" htmlFor="fullGrams">
+          Gramos Totales
         </label>
         <input
           type="number"
-          name="grams"
-          value={formData.grams}
-          onChange={handleChange}
-          className="border border-gray-300 rounded w-full py-2 px-3 mb-4 bg-gray-50 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required
-        />
-
-        <label className="block text-black font-bold mb-2" htmlFor="portions">
-          Gramos por Porción
-        </label>
-        <input
-          type="number"
-          name="portions"
-          value={formData.portions}
+          name="fullGrams"
+          value={formData.fullGrams}
           onChange={handleChange}
           className="border border-gray-300 rounded w-full py-2 px-3 mb-4 bg-gray-50 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
           required
@@ -181,50 +202,102 @@ function ProductForm() {
 
         <label
           className="block text-black font-bold mb-2"
-          htmlFor="pricePerPortion"
+          htmlFor="fullPortionGrams"
         >
-          Precio por Porción
+          Gramos por Porción Completa
         </label>
         <input
           type="number"
-          name="pricePerPortion"
-          value={formData.pricePerPortion}
+          name="fullPortionGrams"
+          value={formData.fullPortionGrams}
           onChange={handleChange}
           className="border border-gray-300 rounded w-full py-2 px-3 mb-4 bg-gray-50 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
           required
         />
 
+        <label
+          className="block text-black font-bold mb-2"
+          htmlFor="halfPortionGrams"
+        >
+          Gramos por Media Porción
+        </label>
+        <input
+          type="number"
+          name="halfPortionGrams"
+          value={calculateHalfPortionGrams()} // Calculamos y mostramos los gramos por media porción
+          readOnly
+          className="border border-gray-300 rounded w-full py-2 px-3 mb-4 bg-gray-50 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        <label
+          className="block text-black font-bold mb-2"
+          htmlFor="fullPortionPrice"
+        >
+          Precio por Porción Completa
+        </label>
+        <input
+          type="number"
+          name="fullPortionPrice"
+          value={formData.fullPortionPrice}
+          onChange={handleChange}
+          className="border border-gray-300 rounded w-full py-2 px-3 mb-4 bg-gray-50 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+
+        <label
+          className="block text-black font-bold mb-2"
+          htmlFor="halfPortionPrice"
+        >
+          Precio por Media Porción
+        </label>
+        <input
+          type="number"
+          name="halfPortionPrice"
+          value={formData.halfPortionPrice} // Campo editable
+          onChange={handleChange}
+          className="border border-gray-300 rounded w-full py-2 px-3 mb-4 bg-gray-50 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+
+        {/* Sección para mostrar Porciones Completas Disponibles */}
+        <div className="text-black font-bold mb-2">
+          Porciones Completas Disponibles: {calculatePortions()}
+        </div>
+
+        {/* Sección para mostrar Gramos Restantes */}
+        <div className="text-black font-bold mb-2">
+          Gramos Restantes: {calculateRemainingGrams()}
+        </div>
+
+        {/* Sección para mostrar Precio Total */}
+        <div className="text-black font-bold mb-2">
+          Precio Total: ${formatNumber(calculateTotalPrice())}
+        </div>
+
+        {/* Sección para subir la imagen */}
         <label className="block text-black font-bold mb-2" htmlFor="image">
-          Imagen
+          Imagen del Producto
         </label>
         <input
           type="file"
           name="image"
+          accept="image/*"
           onChange={handleChange}
           className="border border-gray-300 rounded w-full py-2 px-3 mb-4 bg-gray-50 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-
         {imagePreview && (
-          <div className="mt-4">
-            <h3 className="text-black font-bold">Vista previa de la imagen:</h3>
-            <img
-              src={imagePreview}
-              alt="Vista previa"
-              className="w-full h-auto border border-gray-300 rounded mt-2"
-            />
-          </div>
+          <img
+            src={imagePreview}
+            alt="Preview"
+            className="w-32 h-32 object-cover mb-4"
+          />
         )}
-
-        <div className="mt-4 text-black">
-          <p>Cantidad de Porciones Disponibles: {calculatePortions()}</p>
-          <p>Valor Total: ${calculateTotalValue().toFixed(2)}</p>
-        </div>
 
         <button
           type="submit"
-          className="bg-black text-white font-bold py-2 px-4 rounded w-full mt-4 hover:bg-orange-500 transition-colors duration-300"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
         >
-          {params.id ? "Actualizar" : "Crear"}
+          {params.id ? "Actualizar Producto" : "Crear Producto"}
         </button>
       </form>
     </div>

@@ -1,15 +1,30 @@
-// src/app/cart/page.jsx
+"use client";
 
-import React from "react";
-import Cart3 from "../../components/Cart3";
+import { useState, useEffect } from "react";
+import Cart from "@/components/Cart";
 
 const CartPage = () => {
+  const [cart, setCart] = useState([]);
+
+  useEffect(() => {
+    // Cargar el carrito del almacenamiento local
+    const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
+    setCart(savedCart);
+  }, []);
+
+  const saveCartToLocalStorage = (updatedCart) => {
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+  };
+
+  const updateCart = (newCart) => {
+    setCart(newCart);
+    saveCartToLocalStorage(newCart);
+  };
+
   return (
-    <div className="flex flex-col items-center p-6 bg-gray-100 min-h-screen">
-      <h1 className="text-4xl font-bold text-center text-black mb-6 shadow-lg p-4 rounded-md bg-white border border-gray-300">
-        Plato Justo
-      </h1>
-      <Cart3 />
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Carrito de Compras</h1>
+      <Cart cart={cart} setCart={updateCart} />
     </div>
   );
 };
