@@ -20,7 +20,6 @@ class Product {
     this.createdAt = new Date(); 
   }
 
-  
   calculatePortions() {
     if (this.grams && this.portions) {
       return Math.floor(this.grams / this.portions);
