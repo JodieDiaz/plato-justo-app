@@ -22,48 +22,77 @@ const ProductMenu = () => {
     fetchProducts();
   }, []);
 
-  const addToCart = (product, portion) => {
+  const addToCart = (product, portionType) => {
     setCart((currentCart) => {
-      // Verifica si el producto ya existe en el carrito con la porción seleccionada
-      const existingItem = currentCart.find(
-        (item) => item.id === product._id && item.portion === portion
+      const existingItemIndex = currentCart.findIndex(
+        (item) => item.id === product._id
       );
 
-      if (existingItem) {
-        // Si ya existe, incrementa la cantidad del artículo en el carrito
-        return currentCart.map((item) =>
-          item.id === product._id && item.portion === portion
-            ? { ...item, quantity: item.quantity + 1 } // Incrementa la cantidad
-            : item
-        );
-      }
+      if (existingItemIndex !== -1) {
+        const updatedItems = [...currentCart];
+        const existingItem = updatedItems[existingItemIndex];
 
-      // Si no existe, agrega el nuevo producto al carrito
-      return [
-        ...currentCart,
-        { ...product, quantity: 1, portion }, // Establece la cantidad inicial en 1
-      ];
+        if (portionType === "full") {
+          existingItem.fullCount += 1; // Aumenta la cantidad de porciones completas
+        } else {
+          existingItem.halfCount += 1; // Aumenta la cantidad de media porción
+
+          // Convertir a porción completa si hay 2 medias porciones
+          if (existingItem.halfCount % 2 === 0) {
+            existingItem.fullCount += 1; // Aumenta porción completa
+            existingItem.halfCount = 0; // Reinicia la media porción
+          }
+        }
+
+        return updatedItems; // Retorna la lista actualizada del carrito
+      } else {
+        return [
+          ...currentCart,
+          {
+            id: product._id,
+            name: product.name,
+            fullPortionPrice: product.fullPortionPrice,
+            halfPortionPrice: product.halfPortionPrice,
+            fullCount: portionType === "full" ? 1 : 0,
+            halfCount: portionType === "half" ? 1 : 0,
+          },
+        ]; // Añade un nuevo producto al carrito
+      }
     });
+  };
+
+
+  // Función para formatear la cantidad
+  const formatQuantity = (fullCount, halfCount) => {
+    let quantityDisplay = `${fullCount} porciones`;
+    if (halfCount > 0) {
+      const halfPortion = halfCount / 2;
+      quantityDisplay += ` y ${halfPortion}`;
+    }
+    return quantityDisplay;
   };
 
   // Función para actualizar la cantidad de un producto en el carrito
   const handleUpdateQuantity = (id, portion, newQuantity) => {
     setCart((currentCart) =>
-      currentCart.map((item) =>
-        item.id === id && item.portion === portion
-          ? { ...item, quantity: newQuantity }
-          : item
-      )
+      currentCart.map((item) => {
+        if (item.id === id) {
+          const updatedItem = { ...item };
+          if (portion === "full") {
+            updatedItem.fullCount = newQuantity;
+          } else {
+            updatedItem.halfCount = newQuantity;
+          }
+          return updatedItem;
+        }
+        return item;
+      })
     );
   };
 
   // Función para eliminar un producto del carrito
   const handleRemoveFromCart = (id, portion) => {
-    setCart((currentCart) =>
-      currentCart.filter(
-        (item) => !(item.id === id && item.portion === portion)
-      )
-    );
+    setCart((currentCart) => currentCart.filter((item) => item.id !== id));
   };
 
   return (
@@ -88,6 +117,7 @@ const ProductMenu = () => {
           cartItems={cart}
           onRemoveFromCart={handleRemoveFromCart} // Pasa la función handleRemoveFromCart
           onUpdateQuantity={handleUpdateQuantity} // Pasa la función handleUpdateQuantity
+          formatQuantity={formatQuantity} // Pasa la función para formatear cantidades
         />
       </div>
     </div>
