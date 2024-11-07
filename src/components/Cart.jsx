@@ -1,6 +1,7 @@
-"use client"; // Esto marca el componente como cliente
+// Cart.jsx
+"use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardHeader,
@@ -8,54 +9,134 @@ import {
   CardContent,
   CardFooter,
 } from "./ui/card";
-import { formatPrice } from "@/lib/utils";
 import { ScrollArea } from "./ui/scroll-area";
 import { Separator } from "./ui/separator";
 import { Button } from "./ui/button";
+import { useToast } from "./ui/use-toast";
+import { useRouter } from "next/navigation";
+import { Skeleton } from "./ui/skeleton";
 
-export default function Cart({
-  cartItems,
-  onRemoveFromCart,
-  onUpdateQuantity,
-}) {
-  // Función para formatear la cantidad
-  const formatQuantity = (fullCount, halfCount) => {
-    let quantityDisplay = "";
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('es-CO', { 
+    style: 'currency', 
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(price);
+};
 
-    if (fullCount === 1) {
-      quantityDisplay += "1 porción completa"; // Cambiado a "porción completa"
-    } else if (fullCount > 1) {
-      quantityDisplay += `${fullCount} porciones completas`; // Cambiado a "porciones completas"
-    }
+const formatQuantity = (fullCount, halfCount) => {
+  let quantityDisplay = "";
+  if (fullCount === 1) {
+    quantityDisplay += "1 porción completa";
+  } else if (fullCount > 1) {
+    quantityDisplay += `${fullCount} porciones completas`;
+  }
+  if (halfCount === 1) {
+    quantityDisplay += `${quantityDisplay ? " más " : ""}1 media porción`;
+  } else if (halfCount > 1) {
+    quantityDisplay += `${quantityDisplay ? " más " : ""}${halfCount} medias porciones`;
+  }
+  return quantityDisplay;
+};
 
-    if (halfCount === 1) {
-      quantityDisplay += `${quantityDisplay ? " más " : ""}1 media porción`; // Cambiado a "más"
-    } else if (halfCount > 1) {
-      quantityDisplay += `${quantityDisplay ? " más " : ""}${halfCount} medias porciones`;
-    }
+const Cart = ({
+  cartItems = [],
+  onRemoveFromCart = () => {},
+  onUpdateQuantity = () => {},
+  onClearCart = () => {}
+}) => {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    return quantityDisplay;
-  };
-
-  // Calcula el precio total
   const getTotalPrice = () => {
     return cartItems.reduce((total, item) => {
-      const pricePerFullPortion = item.fullPortionPrice; // Precio por porción completa
-      const pricePerHalfPortion = item.halfPortionPrice; // Precio por media porción
-
-      const totalFullCount = item.fullCount + Math.floor(item.halfCount / 2); // Total de porciones completas
-      const totalHalfCount = item.halfCount % 2; // Total de medias porciones restantes
-
-      const totalFullPrice = pricePerFullPortion * totalFullCount; // Total de porciones completas
-      const totalHalfPrice = pricePerHalfPortion * totalHalfCount; // Total de medias porciones
-
-      return total + totalFullPrice + totalHalfPrice; // Suma total
+      const totalFullCount = item.fullCount + Math.floor(item.halfCount / 2);
+      const totalHalfCount = item.halfCount % 2;
+      const totalFullPrice = item.fullPortionPrice * totalFullCount;
+      const totalHalfPrice = item.halfPortionPrice * totalHalfCount;
+      return total + totalFullPrice + totalHalfPrice;
     }, 0);
   };
 
   const handleUpdateQuantity = (id, type, count) => {
-    // Siempre permite que ambas cantidades (completa y media) lleguen a 0
-    onUpdateQuantity(id, type, count);
+    if (count >= 0) {
+      onUpdateQuantity(id, type, count);
+    }
+  };
+
+  const obtenerProductosDelCarrito = () => {
+    return cartItems.map(item => ({
+      idProducto: item.id,
+      nombre: item.name,
+      porcion: item.halfCount > 0 ? "media" : "completa",
+      cantidad: item.halfCount > 0 ? item.halfCount : item.fullCount,
+      precio: item.halfCount > 0 ? item.halfPortionPrice : item.fullPortionPrice,
+    }));
+  };
+
+  const realizarPedido = async () => {
+    if (cartItems.length === 0) {
+      toast({
+        title: "Error",
+        description: "El carrito está vacío",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    toast({
+      title: "Enviando pedido",
+      description: "Enviando información a la cocina y a la base de datos SaborArte...",
+    });
+
+    try {
+      const pedido = {
+        productos: obtenerProductosDelCarrito(),
+        fechaHora: new Date().toISOString(),
+        estado: "pendiente",
+        total: getTotalPrice(),
+      };
+
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(pedido)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Error al procesar el pedido");
+      }
+
+      toast({
+        title: "Pedido enviado correctamente",
+        description: `Número de pedido: ${data.orderId}. Guardado en la base de datos SaborArte.`,
+      });
+
+      try {
+        onClearCart();
+      } catch (error) {
+        console.error("Error al limpiar el carrito:", error);
+      }
+
+      router.push('/kitchen-orders');
+    } catch (error) {
+      console.error("Error al enviar el pedido:", error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al procesar tu pedido. Por favor, intenta nuevamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -69,29 +150,21 @@ export default function Cart({
             <p className="text-center text-gray-500">Tu carrito está vacío</p>
           ) : (
             cartItems.map((item) => {
-              const totalFullCount =
-                item.fullCount + Math.floor(item.halfCount / 2);
-              const remainingHalfCount = item.halfCount % 2; // Restante en medias porciones
+              const totalFullCount = item.fullCount + Math.floor(item.halfCount / 2);
+              const remainingHalfCount = item.halfCount % 2;
 
               return (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between mb-4 text-sm"
-                >
+                <div key={item.id} className="flex items-center justify-between mb-4 text-sm">
                   <div className="flex-1">
                     <h3 className="font-semibold">{item.name}</h3>
                     {totalFullCount > 0 && (
                       <p className="text-gray-600">
-                        Porción completa:{" "}
-                        {formatPrice(parseFloat(item.fullPortionPrice))} por
-                        unidad
+                        Porción completa: {formatPrice(item.fullPortionPrice)} por unidad
                       </p>
                     )}
                     {remainingHalfCount > 0 && (
                       <p className="text-gray-600">
-                        Media porción:{" "}
-                        {formatPrice(parseFloat(item.halfPortionPrice))} por
-                        unidad
+                        Media porción: {formatPrice(item.halfPortionPrice)} por unidad
                       </p>
                     )}
                     <p className="text-gray-600">
@@ -102,82 +175,52 @@ export default function Cart({
                     <div className="flex flex-col items-center">
                       <span>Porción Completa</span>
                       <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() =>
-                            handleUpdateQuantity(
-                              item.id,
-                              "full",
-                              item.fullCount - 1
-                            )
-                          }
-                          className="bg-red-500 text-white rounded-md px-2 py-1 hover:bg-red-600 transition-colors text-sm"
-                          disabled={item.fullCount <= 0} // Permitir llegar a 0
+                        <Button
+                          onClick={() => handleUpdateQuantity(item.id, "full", item.fullCount - 1)}
+                          variant="destructive"
+                          size="sm"
+                          disabled={item.fullCount <= 0}
                         >
                           -
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleUpdateQuantity(
-                              item.id,
-                              "full",
-                              item.fullCount + 1
-                            )
-                          }
-                          className="bg-green-500 text-white rounded-md px-2 py-1 hover:bg-green-600 transition-colors text-sm"
+                        </Button>
+                        <span className="w-8 text-center">{item.fullCount}</span>
+                        <Button
+                          onClick={() => handleUpdateQuantity(item.id, "full", item.fullCount + 1)}
+                          variant="default"
+                          size="sm"
                         >
                           +
-                        </button>
+                        </Button>
                       </div>
-                      <span>
-                        {totalFullCount}{" "}
-                        {totalFullCount === 1 ? "porción" : "porciones"}
-                      </span>
                     </div>
                     <div className="flex flex-col items-center">
                       <span>Media Porción</span>
                       <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => {
-                            const newHalfCount = item.halfCount - 1;
-                            handleUpdateQuantity(item.id, "half", newHalfCount);
-                          }}
-                          className="bg-red-500 text-white rounded-md px-2 py-1 hover:bg-red-600 transition-colors text-sm"
-                          disabled={item.halfCount <= 0} // Permitir llegar a 0
+                        <Button
+                          onClick={() => handleUpdateQuantity(item.id, "half", item.halfCount - 1)}
+                          variant="destructive"
+                          size="sm"
+                          disabled={item.halfCount <= 0}
                         >
                           -
-                        </button>
-                        <button
-                          onClick={() => {
-                            const newHalfCount = item.halfCount + 1;
-                            handleUpdateQuantity(item.id, "half", newHalfCount);
-                            // Convierte a una porción completa si el conteo de medias porciones es par
-                            if (newHalfCount % 2 === 0) {
-                              handleUpdateQuantity(
-                                item.id,
-                                "full",
-                                totalFullCount + 1
-                              );
-                            }
-                          }}
-                          className="bg-green-500 text-white rounded-md px-2 py-1 hover:bg-green-600 transition-colors text-sm"
-                          disabled={item.halfCount > 0} // Permitir sumar más
+                        </Button>
+                        <span className="w-8 text-center">{item.halfCount}</span>
+                        <Button
+                          onClick={() => handleUpdateQuantity(item.id, "half", item.halfCount + 1)}
+                          variant="default"
+                          size="sm"
                         >
                           +
-                        </button>
+                        </Button>
                       </div>
-                      <span>
-                        {item.halfCount}{" "}
-                        {item.halfCount === 1
-                          ? "media porción"
-                          : "medias porciones"}
-                      </span>
                     </div>
-                    <button
+                    <Button
                       onClick={() => onRemoveFromCart(item.id)}
-                      className="bg-gray-300 text-black rounded p-1 hover:bg-gray-400"
+                      variant="outline"
+                      size="sm"
                     >
                       Eliminar
-                    </button>
+                    </Button>
                   </div>
                 </div>
               );
@@ -192,10 +235,24 @@ export default function Cart({
           <h3 className="text-lg font-bold">Total:</h3>
           <p className="text-xl font-bold">{formatPrice(getTotalPrice())}</p>
         </div>
-        <Button className="w-full" size="lg">
-          Realizar Pedido
-        </Button>
+        {isSubmitting ? (
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-4 w-3/4 mx-auto" />
+          </div>
+        ) : (
+          <Button 
+            className="w-full" 
+            size="lg" 
+            onClick={realizarPedido}
+            disabled={isSubmitting || cartItems.length === 0}
+          >
+            {isSubmitting ? "Procesando..." : "Realizar Pedido"}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
-}
+};
+
+export default Cart;

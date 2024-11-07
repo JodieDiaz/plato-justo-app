@@ -9,7 +9,6 @@ import UserForm from "../components/UserForm"; // Importación de UserForm
 import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
 
-
 function HomePage({user}) {
   const router = useRouter();
 
