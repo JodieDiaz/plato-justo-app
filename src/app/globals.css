@@ -76,3 +76,27 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.modal-content {
+  position: relative;
+  top: 50%; /* Centra el modal verticalmente */
+  left: 50%; /* Centra el modal horizontalmente */
+  transform: translate(-50%, -50%); /* Ajusta para que el modal quede centrado exacto */
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%; /* Ajusta el ancho, si lo deseas */
+  max-width: 500px; /* Puedes cambiar esto según tus necesidades */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombras para darle efecto de popup */
+  z-index: 1000; /* Asegúrate de que el modal esté por encima de otros elementos */
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro con opacidad */
+  z-index: 999; /* Fondo con menor índice para que quede detrás del modal */
+}

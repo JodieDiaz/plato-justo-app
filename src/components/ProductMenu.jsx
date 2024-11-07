@@ -4,10 +4,14 @@ import React, { useEffect, useState } from "react";
 import axios from "axios"; // Importa axios
 import MenuCard from "./MenuCard"; // Asegúrate de que la ruta sea correcta
 import Cart from "./Cart"; // Asegúrate de que la ruta sea correcta
+import { useCart } from "@/context/CartContext"; // Importa el contexto
+import ConfirmarPedido from "./ConfirmarPedido"; // Importa el componente Modal
 
 const ProductMenu = () => {
   const [products, setProducts] = useState([]);
-  const [cart, setCart] = useState([]); // Estado para el carrito
+  const { cart, addToCart, handleUpdateQuantity, handleRemoveFromCart } =
+    useCart(); // Usa el contexto
+  const [isModalOpen, setModalOpen] = useState(false); // Estado para controlar el modal
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -22,46 +26,6 @@ const ProductMenu = () => {
     fetchProducts();
   }, []);
 
-  const addToCart = (product, portionType) => {
-    setCart((currentCart) => {
-      const existingItemIndex = currentCart.findIndex(
-        (item) => item.id === product._id
-      );
-
-      if (existingItemIndex !== -1) {
-        const updatedItems = [...currentCart];
-        const existingItem = updatedItems[existingItemIndex];
-
-        if (portionType === "full") {
-          existingItem.fullCount += 1; // Aumenta la cantidad de porciones completas
-        } else {
-          existingItem.halfCount += 1; // Aumenta la cantidad de media porción
-
-          // Convertir a porción completa si hay 2 medias porciones
-          if (existingItem.halfCount % 2 === 0) {
-            existingItem.fullCount += 1; // Aumenta porción completa
-            existingItem.halfCount = 0; // Reinicia la media porción
-          }
-        }
-
-        return updatedItems; // Retorna la lista actualizada del carrito
-      } else {
-        return [
-          ...currentCart,
-          {
-            id: product._id,
-            name: product.name,
-            fullPortionPrice: product.fullPortionPrice,
-            halfPortionPrice: product.halfPortionPrice,
-            fullCount: portionType === "full" ? 1 : 0,
-            halfCount: portionType === "half" ? 1 : 0,
-          },
-        ]; // Añade un nuevo producto al carrito
-      }
-    });
-  };
-
-
   // Función para formatear la cantidad
   const formatQuantity = (fullCount, halfCount) => {
     let quantityDisplay = `${fullCount} porciones`;
@@ -72,28 +36,9 @@ const ProductMenu = () => {
     return quantityDisplay;
   };
 
-  // Función para actualizar la cantidad de un producto en el carrito
-  const handleUpdateQuantity = (id, portion, newQuantity) => {
-    setCart((currentCart) =>
-      currentCart.map((item) => {
-        if (item.id === id) {
-          const updatedItem = { ...item };
-          if (portion === "full") {
-            updatedItem.fullCount = newQuantity;
-          } else {
-            updatedItem.halfCount = newQuantity;
-          }
-          return updatedItem;
-        }
-        return item;
-      })
-    );
-  };
-
-  // Función para eliminar un producto del carrito
-  const handleRemoveFromCart = (id, portion) => {
-    setCart((currentCart) => currentCart.filter((item) => item.id !== id));
-  };
+  // Funciones para abrir y cerrar el modal
+  const openModal = () => setModalOpen(true);
+  const closeModal = () => setModalOpen(false);
 
   return (
     <div className="flex flex-col lg:flex-row p-4">
@@ -105,7 +50,7 @@ const ProductMenu = () => {
               key={product._id}
               product={product}
               addToCart={addToCart} // Pasa la función addToCart a MenuCard
-              cartItems={cart} // Pasa cartItems a MenuCard si lo necesitas en ese componente
+              openModal={openModal} // Pasa la función openModal a MenuCard
             />
           ))}
         </div>
@@ -114,12 +59,15 @@ const ProductMenu = () => {
       {/* Carrito en la parte derecha */}
       <div className="mt-8 lg:ml-8 lg:w-1/3">
         <Cart
-          cartItems={cart}
-          onRemoveFromCart={handleRemoveFromCart} // Pasa la función handleRemoveFromCart
-          onUpdateQuantity={handleUpdateQuantity} // Pasa la función handleUpdateQuantity
+          cartItems={cart} // Pasa cartItems directamente desde el contexto
+          onRemoveFromCart={handleRemoveFromCart} // Usa la función de eliminación del contexto
+          onUpdateQuantity={handleUpdateQuantity} // Usa la función de actualización del contexto
           formatQuantity={formatQuantity} // Pasa la función para formatear cantidades
         />
       </div>
+
+      {/* Renderizar el modal si está abierto */}
+      {isModalOpen && <ConfirmarPedido closeModal={closeModal} />}
     </div>
   );
 };

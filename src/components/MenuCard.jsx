@@ -2,10 +2,14 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/context/CartContext"; // Importamos el hook de carrito
 
-const MenuCard = ({ product, addToCart, cartItems }) => {
+const MenuCard = ({ product }) => {
+  // Obtenemos el carrito y la función addToCart del contexto
+  const { cart, addToCart } = useCart();
+
   // Verifica si el producto ya está en el carrito
-  const isInCart = cartItems.some((item) => item.id === product._id);
+  const isInCart = cart.some((item) => item.id === product._id);
 
   return (
     <div className="bg-gray-200 p-4 rounded-lg text-center transition-all hover:bg-gray-300 shadow-md">
