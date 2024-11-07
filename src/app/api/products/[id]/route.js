@@ -1,3 +1,4 @@
+
 import { connectDB } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
@@ -18,6 +19,7 @@ export async function GET(request, { params }) {
       );
     }
 
+
     return NextResponse.json(pedido);
   } catch (error) {
     console.error("Error al obtener el pedido:", error);
@@ -28,7 +30,7 @@ export async function GET(request, { params }) {
   }
 }
 
-// PATCH para actualizar el estado de un pedido
+
 export async function PATCH(request, { params }) {
   try {
     const { id } = params;
@@ -49,6 +51,7 @@ export async function PATCH(request, { params }) {
         { status: 404 }
       );
     }
+
 
     return NextResponse.json(result.value);
   } catch (error) {

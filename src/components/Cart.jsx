@@ -1,7 +1,9 @@
+
 // Cart.jsx
 "use client";
 
 import React, { useState } from "react";
+
 import {
   Card,
   CardHeader,
@@ -9,6 +11,7 @@ import {
   CardContent,
   CardFooter,
 } from "./ui/card";
+
 import { ScrollArea } from "./ui/scroll-area";
 import { Separator } from "./ui/separator";
 import { Button } from "./ui/button";
@@ -149,6 +152,7 @@ const Cart = ({
           {cartItems.length === 0 ? (
             <p className="text-center text-gray-500">Tu carrito está vacío</p>
           ) : (
+
             cartItems.map((item) => {
               const totalFullCount = item.fullCount + Math.floor(item.halfCount / 2);
               const remainingHalfCount = item.halfCount % 2;
@@ -235,6 +239,7 @@ const Cart = ({
           <h3 className="text-lg font-bold">Total:</h3>
           <p className="text-xl font-bold">{formatPrice(getTotalPrice())}</p>
         </div>
+
         {isSubmitting ? (
           <div className="space-y-2">
             <Skeleton className="h-10 w-full" />
