@@ -3,7 +3,7 @@ import Link from "next/link"; // Asegúrate de que esta línea esté aquí
 import "./globals.css";
 import Header from "../components/Header"; 
 import Hero from "../components/Hero"; 
-
+import { ToastProvider } from "@/components/ui/toast"
 
 function HomePage() {
   return (
