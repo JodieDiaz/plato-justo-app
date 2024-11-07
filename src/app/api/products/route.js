@@ -1,4 +1,3 @@
-// api/products/route.js
 import connectToDatabase from "@/libs/db"; // Asegúrate de que esta ruta sea correcta
 import { NextResponse } from "next/server";
 
@@ -8,7 +7,8 @@ export async function POST(req) {
     const { db } = await connectToDatabase(); // Conexión a la base de datos
     const body = await req.json(); // Obtener los datos enviados desde el formulario
 
-    // Desestructuración del cuerpo de la solicitud
+
+    // Desestructuración del cuerpo de la solicitud y conversión de tipos
     const {
       name,
       description,
@@ -41,16 +41,22 @@ export async function POST(req) {
       );
     }
 
-    if (!fullGrams || typeof fullGrams !== "number" || fullGrams <= 0) {
+
+    if (
+      !fullGramsNum ||
+      typeof fullGramsNum !== "number" ||
+      fullGramsNum <= 0
+    ) {
       errors.push(
         "El campo 'fullGrams' es requerido y debe ser un número mayor a 0."
       );
     }
 
     if (
-      !fullPortionGrams ||
-      typeof fullPortionGrams !== "number" ||
-      fullPortionGrams <= 0
+
+      !fullPortionGramsNum ||
+      typeof fullPortionGramsNum !== "number" ||
+      fullPortionGramsNum <= 0
     ) {
       errors.push(
         "El campo 'fullPortionGrams' es requerido y debe ser un número mayor a 0."
@@ -58,9 +64,10 @@ export async function POST(req) {
     }
 
     if (
-      !halfPortionGrams ||
-      typeof halfPortionGrams !== "number" ||
-      halfPortionGrams <= 0
+
+      !halfPortionGramsNum ||
+      typeof halfPortionGramsNum !== "number" ||
+      halfPortionGramsNum <= 0
     ) {
       errors.push(
         "El campo 'halfPortionGrams' es requerido y debe ser un número mayor a 0."
@@ -68,9 +75,10 @@ export async function POST(req) {
     }
 
     if (
-      !fullPortionPrice ||
-      typeof fullPortionPrice !== "number" ||
-      fullPortionPrice < 0
+
+      !fullPortionPriceNum ||
+      typeof fullPortionPriceNum !== "number" ||
+      fullPortionPriceNum < 0
     ) {
       errors.push(
         "El campo 'fullPortionPrice' es requerido y debe ser un número mayor o igual a 0."
@@ -78,16 +86,18 @@ export async function POST(req) {
     }
 
     if (
-      !halfPortionPrice ||
-      typeof halfPortionPrice !== "number" ||
-      halfPortionPrice < 0
+
+      !halfPortionPriceNum ||
+      typeof halfPortionPriceNum !== "number" ||
+      halfPortionPriceNum < 0
     ) {
       errors.push(
         "El campo 'halfPortionPrice' es requerido y debe ser un número mayor o igual a 0."
       );
     }
 
-    if (!fullPrice || typeof fullPrice !== "number" || fullPrice < 0) {
+
+    if (!fullPriceNum || typeof fullPriceNum !== "number" || fullPriceNum < 0) {
       errors.push(
         "El campo 'fullPrice' es requerido y debe ser un número mayor o igual a 0."
       );
@@ -106,12 +116,13 @@ export async function POST(req) {
     const result = await db.collection("products").insertOne({
       name,
       description,
-      fullGrams,
-      fullPortionGrams,
-      halfPortionGrams,
-      fullPortionPrice,
-      halfPortionPrice,
-      fullPrice,
+
+      fullGrams: fullGramsNum,
+      fullPortionGrams: fullPortionGramsNum,
+      halfPortionGrams: halfPortionGramsNum,
+      fullPortionPrice: fullPortionPriceNum,
+      halfPortionPrice: halfPortionPriceNum,
+      fullPrice: fullPriceNum,
       image,
       createdAt: new Date(),
     });
@@ -139,27 +150,37 @@ export async function GET(req) {
     const products = await db.collection("products").find({}).toArray();
     console.log("Productos obtenidos:", products);
 
-    // Agregar lógica para calcular totalPortions y remainingGrams
+
+    // Función para formatear los números en formato colombiano
+    const formatNumber = (number) => {
+      return new Intl.NumberFormat("es-CO").format(number);
+    };
+
+    // Crear un arreglo para almacenar los productos con información adicional
+
     const productsWithAdditionalInfo = products.map((product) => {
       const totalPortions = Math.floor(
         product.fullGrams / product.fullPortionGrams
       );
       const remainingGrams = product.fullGrams % product.fullPortionGrams;
 
+
+      // Agregar un nuevo campo "portions" en el objeto del producto
       return {
-        _id: product._id,
-        name: product.name,
-        description: product.description,
-        fullGrams: product.fullGrams,
-        fullPortionGrams: product.fullPortionGrams,
-        halfPortionGrams: product.halfPortionGrams,
-        fullPortionPrice: product.fullPortionPrice,
-        halfPortionPrice: product.halfPortionPrice,
-        fullPrice: product.fullPrice,
-        image: product.image,
-        createdAt: product.createdAt,
-        totalPortions, // Agrega este campo calculado
-        remainingGrams, // Agrega este campo calculado
+        ...product,
+        portions: {
+          completo: {
+            grams: formatNumber(product.fullPortionGrams),
+            price: formatNumber(product.fullPortionPrice),
+            totalPortions,
+            remainingGrams,
+          },
+          media: {
+            grams: formatNumber(product.halfPortionGrams),
+            price: formatNumber(product.halfPortionPrice),
+          },
+        },
+
       };
     });
 
@@ -172,4 +193,6 @@ export async function GET(req) {
       { status: 500 }
     );
   }
+
 }
+
