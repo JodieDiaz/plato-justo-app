@@ -1,64 +1,53 @@
+import { NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/mongodb'; // Nuevo Henry
+import { ObjectId } from 'mongodb';
 
-import { connectDB } from "@/lib/mongodb";
-import { ObjectId } from "mongodb";
-import { NextResponse } from "next/server";
-
-// GET para obtener un pedido específico
-export async function GET(request, { params }) {
+export async function PUT(request, { params }) {
   try {
     const { id } = params;
-    const { db } = await connectDB();
-    
-    const objectId = new ObjectId(id);
-    const pedido = await db.collection("pedidos").findOne({ _id: objectId });
+    const { estado, fechaEntrega } = await request.json();
 
-    if (!pedido) {
-      return NextResponse.json(
-        { error: "Pedido no encontrado" }, 
-        { status: 404 }
-      );
+    const { db } = await connectToDatabase();
+
+    const result = await db.collection('pedidos').updateOne(
+      { _id: new ObjectId(id) },
+      { 
+        $set: { 
+          estado: estado,
+          fechaEntrega: fechaEntrega
+        } 
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 });
     }
 
+    return NextResponse.json({ message: 'Pedido actualizado correctamente' }, { status: 200 });
 
-    return NextResponse.json(pedido);
   } catch (error) {
-    console.error("Error al obtener el pedido:", error);
-    return NextResponse.json(
-      { error: "Error al obtener el pedido" }, 
-      { status: 500 }
-    );
+    console.error('Error al actualizar el pedido:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
 
+export async function GET(request, { params }) {
 
-export async function PATCH(request, { params }) {
   try {
     const { id } = params;
-    const { estado } = await request.json();
-    const { db } = await connectDB();
-    
-    const objectId = new ObjectId(id);
-    
-    const result = await db.collection("pedidos").findOneAndUpdate(
-      { _id: objectId },
-      { $set: { estado } },
-      { returnDocument: 'after' }
-    );
 
-    if (!result.value) {
-      return NextResponse.json(
-        { error: "Pedido no encontrado" }, 
-        { status: 404 }
-      );
+    const { db } = await connectToDatabase();
+
+    const pedido = await db.collection('pedidos').findOne({ _id: new ObjectId(id) });
+
+    if (!pedido) {
+      return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 });
     }
 
+    return NextResponse.json(pedido);
 
-    return NextResponse.json(result.value);
   } catch (error) {
-    console.error("Error al actualizar el pedido:", error);
-    return NextResponse.json(
-      { error: "Error al actualizar el pedido" }, 
-      { status: 500 }
-    );
+    console.error('Error al obtener el pedido:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
