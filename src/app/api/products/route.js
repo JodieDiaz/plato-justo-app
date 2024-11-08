@@ -7,6 +7,7 @@ export async function POST(req) {
     const { db } = await connectToDatabase(); // Conexión a la base de datos
     const body = await req.json(); // Obtener los datos enviados desde el formulario
 
+
     // Desestructuración del cuerpo de la solicitud y conversión de tipos
     const {
       name,
@@ -19,14 +20,6 @@ export async function POST(req) {
       fullPrice,
       image,
     } = body;
-
-    // Convertir valores numéricos que se reciben como cadenas a números
-    const fullGramsNum = Number(fullGrams);
-    const fullPortionGramsNum = Number(fullPortionGrams);
-    const halfPortionGramsNum = Number(halfPortionGrams);
-    const fullPortionPriceNum = Number(fullPortionPrice);
-    const halfPortionPriceNum = Number(halfPortionPrice);
-    const fullPriceNum = Number(fullPrice);
 
     // Imprimir el cuerpo para depuración
     console.log("Cuerpo de la solicitud:", body);
@@ -48,6 +41,7 @@ export async function POST(req) {
       );
     }
 
+
     if (
       !fullGramsNum ||
       typeof fullGramsNum !== "number" ||
@@ -59,6 +53,7 @@ export async function POST(req) {
     }
 
     if (
+
       !fullPortionGramsNum ||
       typeof fullPortionGramsNum !== "number" ||
       fullPortionGramsNum <= 0
@@ -69,6 +64,7 @@ export async function POST(req) {
     }
 
     if (
+
       !halfPortionGramsNum ||
       typeof halfPortionGramsNum !== "number" ||
       halfPortionGramsNum <= 0
@@ -79,6 +75,7 @@ export async function POST(req) {
     }
 
     if (
+
       !fullPortionPriceNum ||
       typeof fullPortionPriceNum !== "number" ||
       fullPortionPriceNum < 0
@@ -89,6 +86,7 @@ export async function POST(req) {
     }
 
     if (
+
       !halfPortionPriceNum ||
       typeof halfPortionPriceNum !== "number" ||
       halfPortionPriceNum < 0
@@ -97,6 +95,7 @@ export async function POST(req) {
         "El campo 'halfPortionPrice' es requerido y debe ser un número mayor o igual a 0."
       );
     }
+
 
     if (!fullPriceNum || typeof fullPriceNum !== "number" || fullPriceNum < 0) {
       errors.push(
@@ -117,6 +116,7 @@ export async function POST(req) {
     const result = await db.collection("products").insertOne({
       name,
       description,
+
       fullGrams: fullGramsNum,
       fullPortionGrams: fullPortionGramsNum,
       halfPortionGrams: halfPortionGramsNum,
@@ -142,7 +142,6 @@ export async function POST(req) {
 }
 
 // Controlador para obtener todos los productos (GET)
-// Controlador para obtener todos los productos (GET)
 export async function GET(req) {
   try {
     const { db } = await connectToDatabase(); // Conexión a la base de datos
@@ -151,17 +150,20 @@ export async function GET(req) {
     const products = await db.collection("products").find({}).toArray();
     console.log("Productos obtenidos:", products);
 
+
     // Función para formatear los números en formato colombiano
     const formatNumber = (number) => {
       return new Intl.NumberFormat("es-CO").format(number);
     };
 
     // Crear un arreglo para almacenar los productos con información adicional
+
     const productsWithAdditionalInfo = products.map((product) => {
       const totalPortions = Math.floor(
         product.fullGrams / product.fullPortionGrams
       );
       const remainingGrams = product.fullGrams % product.fullPortionGrams;
+
 
       // Agregar un nuevo campo "portions" en el objeto del producto
       return {
@@ -178,6 +180,7 @@ export async function GET(req) {
             price: formatNumber(product.halfPortionPrice),
           },
         },
+
       };
     });
 
@@ -190,4 +193,6 @@ export async function GET(req) {
       { status: 500 }
     );
   }
+
 }
+

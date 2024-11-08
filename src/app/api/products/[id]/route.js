@@ -1,94 +1,63 @@
-import { connectToDatabase } from "@/libs/db"; // Asegúrate de que la ruta de esta importación sea correcta
-import { ObjectId } from "mongodb"; // Asegúrate de tener mongodb instalado
 
-// Obtener un producto por ID
-export async function GET(req, { params }) {
-  const { id } = params; // Obtenemos el ID de los parámetros
+import { connectDB } from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
+import { NextResponse } from "next/server";
 
+// GET para obtener un pedido específico
+export async function GET(request, { params }) {
   try {
-    const { db } = await connectToDatabase();
-    const product = await db
-      .collection("products")
-      .findOne({ _id: new ObjectId(id) });
+    const { id } = params;
+    const { db } = await connectDB();
+    
+    const objectId = new ObjectId(id);
+    const pedido = await db.collection("pedidos").findOne({ _id: objectId });
 
-    if (!product) {
-      return new Response(
-        JSON.stringify({ message: "Producto no encontrado" }),
+    if (!pedido) {
+      return NextResponse.json(
+        { error: "Pedido no encontrado" }, 
         { status: 404 }
       );
     }
 
-    return new Response(JSON.stringify(product), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+
+    return NextResponse.json(pedido);
   } catch (error) {
-    console.error("Error al obtener el producto:", error);
-    return new Response(
-      JSON.stringify({ message: "Error al obtener el producto" }),
+    console.error("Error al obtener el pedido:", error);
+    return NextResponse.json(
+      { error: "Error al obtener el pedido" }, 
       { status: 500 }
     );
   }
 }
 
-// Actualizar un producto por ID
-export async function PUT(req, { params }) {
-  const { id } = params; // Obtenemos el ID de los parámetros
-  const body = await req.json(); // Obtener los datos del cuerpo de la solicitud
 
+export async function PATCH(request, { params }) {
   try {
-    const { db } = await connectToDatabase();
-
-    const result = await db.collection("products").updateOne(
-      { _id: new ObjectId(id) },
-      { $set: body } // Actualiza los campos según el cuerpo de la solicitud
+    const { id } = params;
+    const { estado } = await request.json();
+    const { db } = await connectDB();
+    
+    const objectId = new ObjectId(id);
+    
+    const result = await db.collection("pedidos").findOneAndUpdate(
+      { _id: objectId },
+      { $set: { estado } },
+      { returnDocument: 'after' }
     );
 
-    if (result.modifiedCount === 0) {
-      return new Response(
-        JSON.stringify({ message: "No se pudo actualizar el producto" }),
+    if (!result.value) {
+      return NextResponse.json(
+        { error: "Pedido no encontrado" }, 
         { status: 404 }
       );
     }
 
-    return new Response(
-      JSON.stringify({ message: "Producto actualizado exitosamente" }),
-      { status: 200 }
-    );
+
+    return NextResponse.json(result.value);
   } catch (error) {
-    console.error("Error al actualizar el producto:", error);
-    return new Response(
-      JSON.stringify({ message: "Error al actualizar el producto" }),
-      { status: 500 }
-    );
-  }
-}
-
-// Eliminar un producto por ID
-export async function DELETE(req, { params }) {
-  const { id } = params; // Obtenemos el ID de los parámetros
-
-  try {
-    const { db } = await connectToDatabase();
-    const result = await db
-      .collection("products")
-      .deleteOne({ _id: new ObjectId(id) });
-
-    if (result.deletedCount === 0) {
-      return new Response(
-        JSON.stringify({ message: "No se pudo eliminar el producto" }),
-        { status: 404 }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({ message: "Producto eliminado exitosamente" }),
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("Error al eliminar el producto:", error);
-    return new Response(
-      JSON.stringify({ message: "Error al eliminar el producto" }),
+    console.error("Error al actualizar el pedido:", error);
+    return NextResponse.json(
+      { error: "Error al actualizar el pedido" }, 
       { status: 500 }
     );
   }
