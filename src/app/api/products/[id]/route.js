@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
+import { connectToDatabase } from '@/lib/mongodb'; // Nuevo Henry
 import { ObjectId } from 'mongodb';
 
 export async function PUT(request, { params }) {
@@ -24,6 +24,7 @@ export async function PUT(request, { params }) {
     }
 
     return NextResponse.json({ message: 'Pedido actualizado correctamente' }, { status: 200 });
+
   } catch (error) {
     console.error('Error al actualizar el pedido:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
@@ -31,6 +32,7 @@ export async function PUT(request, { params }) {
 }
 
 export async function GET(request, { params }) {
+
   try {
     const { id } = params;
 
@@ -43,6 +45,7 @@ export async function GET(request, { params }) {
     }
 
     return NextResponse.json(pedido);
+
   } catch (error) {
     console.error('Error al obtener el pedido:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });

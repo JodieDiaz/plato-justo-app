@@ -1,9 +1,11 @@
+
 "use client"; // Esto marca el componente como cliente
 
 import React from "react";
 import { Button } from "@/components/ui/button";
 
 const MenuCard = ({ product, addToCart, cartItems }) => {
+
   // Verifica si el producto ya está en el carrito
   const isInCart = cartItems.some((item) => item.id === product._id);
 
@@ -29,6 +31,7 @@ const MenuCard = ({ product, addToCart, cartItems }) => {
       </div>
       <div className="flex flex-col justify-center gap-1">
         <Button
+
           onClick={() => {
             if (!isInCart) {
               addToCart(product, "full");
@@ -44,6 +47,7 @@ const MenuCard = ({ product, addToCart, cartItems }) => {
           Porción Completa ({product.fullPortionGrams}g)
         </Button>
         <Button
+
           onClick={() => {
             if (!isInCart) {
               addToCart(product, "half");

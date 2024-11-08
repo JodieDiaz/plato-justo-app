@@ -22,6 +22,7 @@ const ProductMenu = () => {
     fetchProducts();
   }, []);
 
+
   const addToCart = (product, portionType) => {
     setCart((currentCart) => {
       const existingItemIndex = currentCart.findIndex(
@@ -92,6 +93,7 @@ const ProductMenu = () => {
 
   // Función para eliminar un producto del carrito
   const handleRemoveFromCart = (id, portion) => {
+
     setCart((currentCart) => currentCart.filter((item) => item.id !== id));
   };
 
@@ -117,6 +119,7 @@ const ProductMenu = () => {
           cartItems={cart}
           onRemoveFromCart={handleRemoveFromCart} // Pasa la función handleRemoveFromCart
           onUpdateQuantity={handleUpdateQuantity} // Pasa la función handleUpdateQuantity
+
           formatQuantity={formatQuantity} // Pasa la función para formatear cantidades
         />
       </div>

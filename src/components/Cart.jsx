@@ -1,3 +1,5 @@
+// Cart.jsx
+"use client";
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import {
@@ -210,6 +212,7 @@ const Cart = ({
                 const totalFullCount = item.fullCount + Math.floor(item.halfCount / 2);
                 const remainingHalfCount = item.halfCount % 2;
 
+
                 return (
                   <div key={item.id} className="flex items-center justify-between mb-4 text-sm">
                     <div className="flex-1">
@@ -336,6 +339,7 @@ const Cart = ({
               <span>Total:</span>
               <span>{formatPrice(getTotalPrice())}</span>
             </div>
+
           </div>
 
           <DialogFooter className="sm:justify-start flex-col gap-2">
