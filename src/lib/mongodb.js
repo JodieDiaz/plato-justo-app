@@ -1,28 +1,31 @@
-// lib/mongodb.js
 import { MongoClient } from 'mongodb';
 
-const uri = process.env.MONGODB_URI;
-let client;
-let clientPromise;
+const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_DB = process.env.MONGODB_DB;
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Please add your Mongo URI to .env.local')
+if (!MONGODB_URI) {
+  throw new Error('defina MONGODB_URI');
 }
 
-if (process.env.NODE_ENV === 'development') {
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri);
-    global._mongoClientPromise = client.connect();
+if (!MONGODB_DB) {
+  throw new Error('defina MONGODB_DB');
+}
+
+let cachedClient = null;
+let cachedDb = null;
+
+export async function connectToDatabase() {
+  // reutilizamos la conexion
+  if (cachedClient && cachedDb) {
+    return { client: cachedClient, db: cachedDb };
   }
-  clientPromise = global._mongoClientPromise;
-} else {
-  client = new MongoClient(uri);
-  clientPromise = client.connect();
-}
 
-export async function connectDB() {
-  const client = await clientPromise;
-  const db = client.db("SaborArte");
-  console.log("Conectado a la base de datos: SaborArte");
-  return { db, client };
+  // Si no hay conexión, se crea nueva
+  const client = await MongoClient.connect(MONGODB_URI);
+  const db = client.db(MONGODB_DB);
+
+  cachedClient = client;
+  cachedDb = db;
+
+  return { client, db };
 }

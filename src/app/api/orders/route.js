@@ -1,65 +1,53 @@
-// app/api/orders/route.js
-import { connectDB } from '@/lib/mongodb';
 import { NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/mongodb';
 
-export async function POST(request) {
+export async function GET() {
   try {
-    const { db } = await connectDB();
-    const pedido = await request.json();
-
-    if (!pedido.productos || !Array.isArray(pedido.productos) || pedido.productos.length === 0) {
-      return NextResponse.json(
-        { error: 'El pedido debe contener productos' },
-        { status: 400 }
-      );
-    }
-
-    const now = new Date();
-    const colombiaTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+    console.log('Iniciando GET request para /api/orders');
     
-    const pedidoCompleto = {
-      ...pedido,
-      fechaHora: colombiaTime.toISOString(),
-      fechaCreacion: colombiaTime,
-      estado: 'pendiente',
-    };
+    const { db } = await connectToDatabase();
+    console.log('Conexión a la base de datos establecida');
 
-    const collection = db.collection('pedidos');
-    const resultado = await collection.insertOne(pedidoCompleto);
+    const pedidos = await db.collection('pedidos')
+      .find({})
+      .sort({ fechaCreacion: -1 })//ordenamos los resultados en la busqueda orden dewscendente
+      .toArray();
 
-    return NextResponse.json({
-      success: true,
-      message: 'Pedido creado exitosamente',
-      orderId: resultado.insertedId,
-    }, { status: 201 });
-
+    console.log(`Encontrados ${pedidos.length} pedidos`);
+    
+    return NextResponse.json({ pedidos });
   } catch (error) {
-    console.error('Error al crear el pedido:', error);
+    console.error('Error en GET /api/orders:', error);
     return NextResponse.json(
-      { error: 'Error al procesar el pedido' },
+      { error: 'Error al obtener los pedidos', details: error.message },
       { status: 500 }
     );
   }
 }
 
-export async function GET() {
+export async function POST(request) {
   try {
-    const { db } = await connectDB();
-    const collection = db.collection('pedidos');
-    
-    const pedidos = await collection
-      .find({})
-      .sort({ fechaCreacion: -1 })
-      .toArray();
+    const pedido = await request.json();
+    console.log('Datos del pedido recibidos:', pedido);
 
-    return NextResponse.json({ 
-      success: true, 
-      pedidos 
-    });
+    const { db } = await connectToDatabase();
+
+    const nuevoPedido = {
+      ...pedido,
+      fechaCreacion: new Date(),
+      estado: pedido.estado || 'pendiente'
+    };
+
+    const result = await db.collection('pedidos').insertOne(nuevoPedido);
+
+    return NextResponse.json({
+      message: 'Pedido creado correctamente',
+      pedidoId: result.insertedId
+    }, { status: 201 });
   } catch (error) {
-    console.error('Error al obtener los pedidos:', error);
+    console.error('Error al crear el pedido:', error);
     return NextResponse.json(
-      { error: 'Error al obtener los pedidos' },
+      { error: 'Error al crear el pedido', details: error.message },
       { status: 500 }
     );
   }
