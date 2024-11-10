@@ -1,11 +1,11 @@
-"use client";
-
+"use client"; // Necesaria porque esta usando 'useRouter' y 'useEffect'
+import "@radix-ui/themes/styles.css";
+import "./globals.css";
 import Image from "next/image";
 import Link from "next/link"; // Asegúrate de que esta línea esté aquí
-import "./globals.css";
-import Header from "../components/Header"; 
-import Hero from "../components/Hero"; 
-import UserForm from "../components/UserForm"; // Importación de UserForm
+import Header from "../components/Header"; // Componente Header
+import Hero from "../components/Hero"; // Componente Hero
+import UserForm from "../components/UserForm"; // Componente UserForm
 import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
 
