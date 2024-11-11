@@ -1,5 +1,5 @@
 // src/api/users/route.js
-import connectToDatabase from "../../../libs/db_user";
+import connectToDatabase from "../../../libs/db_users";
 import { NextResponse } from "next/server";
 
 // Controlador para manejar la creación de un usuario (POST)
