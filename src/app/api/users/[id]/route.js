@@ -1,5 +1,5 @@
 //import { connectToDatabase } from "@/libs/db"; // Asegúrate de que la ruta de esta importación sea correcta
-import connectToDatabase from "../../../../libs/db_user";
+import connectToDatabase from "../../../../libs/db_users";
 import { ObjectId } from "mongodb"; // Asegúrate de tener mongodb instalado
 
 // Obtener un usuario por ID
