@@ -62,6 +62,7 @@ const ProductMenu = () => {
           cartItems={cart} // Pasa cartItems directamente desde el contexto
           onRemoveFromCart={handleRemoveFromCart} // Usa la función de eliminación del contexto
           onUpdateQuantity={handleUpdateQuantity} // Usa la función de actualización del contexto
+
           formatQuantity={formatQuantity} // Pasa la función para formatear cantidades
         />
       </div>

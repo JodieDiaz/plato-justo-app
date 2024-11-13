@@ -44,17 +44,40 @@ export default function Cart({
       }`;
     }
 
-    return quantityDisplay;
-  };
+
+const formatQuantity = (fullCount, halfCount) => {
+  let quantityDisplay = "";
+  if (fullCount === 1) {
+    quantityDisplay += "1 porción completa";
+  } else if (fullCount > 1) {
+    quantityDisplay += `${fullCount} porciones completas`;
+  }
+  if (halfCount === 1) {
+    quantityDisplay += `${quantityDisplay ? " más " : ""} 1 media porción`;
+  } else if (halfCount > 1) {
+    quantityDisplay += `${quantityDisplay ? " más " : ""}${halfCount} medias porciones`;
+  }
+  return quantityDisplay;
+};
+
+const Cart = ({
+  cartItems = [],
+  onRemoveFromCart = () => {},
+  onUpdateQuantity = () => {},
+  onClearCart = () => {}
+}) => {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [qrCode, setQrCode] = useState(null);
 
   const getTotalPrice = () => {
     return cartItems.reduce((total, item) => {
       const totalFullCount = item.fullCount + Math.floor(item.halfCount / 2);
       const remainingHalfCount = item.halfCount % 2;
-
       const totalFullPrice = item.fullPortionPrice * totalFullCount;
       const totalHalfPrice = item.halfPortionPrice * remainingHalfCount;
-
       return total + totalFullPrice + totalHalfPrice;
     }, 0);
   };
@@ -172,4 +195,22 @@ export default function Cart({
       )}
     </div>
   );
-}
+};
+
+Cart.propTypes = {
+  cartItems: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      fullCount: PropTypes.number.isRequired,
+      halfCount: PropTypes.number.isRequired,
+      fullPortionPrice: PropTypes.number.isRequired,
+      halfPortionPrice: PropTypes.number.isRequired,
+    })
+  ),
+  onRemoveFromCart: PropTypes.func,
+  onUpdateQuantity: PropTypes.func,
+  onClearCart: PropTypes.func,
+};
+
+export default Cart;

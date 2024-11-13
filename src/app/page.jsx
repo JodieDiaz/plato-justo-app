@@ -1,11 +1,23 @@
+"use client"; // Necesaria porque esta usando 'useRouter' y 'useEffect'
+import "@radix-ui/themes/styles.css";
+import "./globals.css";
 import Image from "next/image";
 import Link from "next/link"; // Asegúrate de que esta línea esté aquí
-import "./globals.css";
-import Header from "../components/Header"; 
-import Hero from "../components/Hero"; 
+import Header from "../components/Header"; // Componente Header
+import Hero from "../components/Hero"; // Componente Hero
+import UserForm from "../components/UserForm"; // Componente UserForm
+import { useRouter } from 'next/navigation';
+import React, { useEffect } from 'react';
 
+function HomePage({user}) {
+  const router = useRouter();
 
-function HomePage() {
+  useEffect(() => {
+    if (user) {
+      router.push("/admin");
+    }
+  }, [user, router]);
+
   return (
     <div>
       <Header /> {/* Reemplaza la Navbar por el Header */}
@@ -101,24 +113,7 @@ function HomePage() {
       <section id="login" className="py-16 bg-gray-100">
         <div className="container mx-auto text-center">
           <h3 className="text-4xl font-bold mb-8">Iniciar Sesión</h3>
-          <form className="max-w-md mx-auto space-y-4">
-            <input
-              type="email"
-              placeholder="Correo Electrónico"
-              className="w-full p-3 border border-gray-300 rounded-lg"
-            />
-            <input
-              type="password"
-              placeholder="Contraseña"
-              className="w-full p-3 border border-gray-300 rounded-lg"
-            />
-            <button
-              type="submit"
-              className="bg-black text-white px-8 py-3 rounded-full hover:bg-orange-500 transition duration-300"
-            >
-              Entrar
-            </button>
-          </form>
+            <UserForm mode="login" /> {/* Renderizamos UserForm en modo login */}
         </div>
       </section>
       {/* Footer */}

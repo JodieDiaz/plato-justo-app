@@ -1,3 +1,4 @@
+
 "use client"; // Esto marca el componente como cliente
 
 import React from "react";
@@ -33,6 +34,7 @@ const MenuCard = ({ product }) => {
       </div>
       <div className="flex flex-col justify-center gap-1">
         <Button
+
           onClick={() => {
             if (!isInCart) {
               addToCart(product, "full");
@@ -48,6 +50,7 @@ const MenuCard = ({ product }) => {
           Porción Completa ({product.fullPortionGrams}g)
         </Button>
         <Button
+
           onClick={() => {
             if (!isInCart) {
               addToCart(product, "half");
